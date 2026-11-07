@@ -19,7 +19,7 @@ O Amigos de Patas é um site desenvolvido para representar uma ONG de proteção
 
 - HTML
 - CSS
-- TypeScript
+- JavaScript
 - Vite+
 - Node.js
 - Express

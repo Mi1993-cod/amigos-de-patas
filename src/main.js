@@ -1,6 +1,6 @@
 import "./style.css";
 
-document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
+document.querySelector("#app").innerHTML = `
   <main class="pagina">
     <header>
       <h1>🐾 Amigos de Patas</h1>
