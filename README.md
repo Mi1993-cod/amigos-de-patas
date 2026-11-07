@@ -58,3 +58,5 @@ A resposta esperada deve apresentar o status `ok`.
 **Curso:** Análise e Desenvolvimento de Sistemas (ADS)
 
 **Instituição:** Universidade de Marília (UNIMAR)
+
+Projeto desenvolvido para fins acadêmicos.
