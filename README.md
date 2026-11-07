@@ -60,3 +60,5 @@ A resposta esperada deve apresentar o status `ok`.
 **Instituição:** Universidade de Marília (UNIMAR)
 
 Projeto desenvolvido para fins acadêmicos.
+
+Desenvolvido com dedicação para o projeto Amigos de Patas.
