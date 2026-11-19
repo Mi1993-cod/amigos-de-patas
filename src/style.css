@@ -47,11 +47,28 @@ header p {
   color: #526b56;
 }
 
-.apresentacao {
+.foto-animais {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.foto-animais img {
+  width: 100%;
+  max-height: 380px;
+  object-fit: cover;
+  border-radius: 18px;
+  display: block;
+}
+
+.apresentacao,
+.animais,
+.cadastro,
+.administracao {
   background: #ffffff;
   padding: 30px;
   border-radius: 18px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  margin-bottom: 30px;
 }
 
 h2 {
@@ -65,7 +82,8 @@ h3 {
 }
 
 .apresentacao p,
-.apresentacao li {
+.apresentacao li,
+.animais p {
   font-size: 17px;
   line-height: 1.7;
 }
@@ -77,6 +95,160 @@ h3 {
 .apresentacao li {
   margin-bottom: 8px;
 }
+
+/* LISTA DE ANIMAIS */
+
+#lista-animais {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-top: 25px;
+}
+
+.card-animal {
+  background: #f4f8f1;
+  border: 1px solid #dcebdc;
+  border-radius: 15px;
+  padding: 22px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+}
+
+.card-animal h3 {
+  color: #285b38;
+  font-size: 22px;
+  margin: 0 0 15px;
+}
+
+.card-animal p {
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 8px 0;
+}
+
+/* CADASTRO DE ANIMAIS */
+
+.cadastro form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.cadastro label {
+  font-weight: bold;
+  color: #354438;
+  margin-top: 8px;
+}
+
+.cadastro input,
+.cadastro select,
+.cadastro textarea {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #cbd8c8;
+  border-radius: 9px;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  background: #fbfcf9;
+}
+
+.cadastro input:focus,
+.cadastro select:focus,
+.cadastro textarea:focus {
+  outline: 2px solid #8ab58d;
+  border-color: #47734d;
+}
+
+.cadastro button {
+  background: #347447;
+  color: white;
+  border: none;
+  padding: 15px;
+  border-radius: 9px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.cadastro button:hover {
+  background: #285b38;
+}
+
+.cadastro button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#mensagem-cadastro {
+  font-weight: bold;
+  color: #285b38;
+}
+
+/* ÁREA ADMINISTRATIVA */
+
+.administracao > p {
+  font-size: 16px;
+  color: #526b56;
+  line-height: 1.6;
+}
+
+#lista-adocoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 25px;
+}
+
+#lista-adocoes .card-animal {
+  background: #f4f8f1;
+  border-left: 5px solid #47734d;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#lista-adocoes .card-animal:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.09);
+}
+
+.btn-aprovar,
+.btn-cancelar {
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 8px 5px 5px 0;
+  transition: background 0.2s ease;
+}
+
+.btn-aprovar {
+  background: #347447;
+  color: #ffffff;
+}
+
+.btn-aprovar:hover {
+  background: #285b38;
+}
+
+.btn-cancelar {
+  background: #f4e2df;
+  color: #963d35;
+}
+
+.btn-cancelar:hover {
+  background: #eac9c3;
+}
+
+.btn-aprovar:disabled,
+.btn-cancelar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* RODAPÉ */
 
 footer {
   text-align: center;
@@ -92,6 +264,8 @@ footer p {
   margin: 6px 0;
 }
 
+/* RESPONSIVIDADE PARA CELULARES */
+
 @media (max-width: 600px) {
   .pagina {
     padding: 20px 14px;
@@ -105,7 +279,59 @@ footer p {
     font-size: 29px;
   }
 
-  .apresentacao {
+  .apresentacao,
+  .animais,
+  .cadastro,
+  .administracao {
     padding: 22px;
   }
+
+  .foto-animais img {
+    max-height: 250px;
+  }
+
+  #lista-adocoes {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-aprovar,
+  .btn-cancelar {
+    width: 100%;
+    margin-right: 0;
+  }
+}
+
+/* Organização dos formulários de adoção */
+.card-animal .form-adocao {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.card-animal .form-adocao h4 {
+  margin: 0 0 10px;
+}
+
+.card-animal .form-adocao label {
+  display: block;
+  width: 100%;
+  margin: 8px 0 0;
+  font-weight: bold;
+}
+
+.card-animal .form-adocao input {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.card-animal .form-adocao button {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
 }
