@@ -299,7 +299,7 @@ const secaoCadastro = document.querySelector("#secao-cadastro");
 const mensagemLogin = document.querySelector("#mensagem-login");
 
 function obterToken() {
-  return sessionStorage.getItem(CHAVE_TOKEN);
+  return localStorage.getItem(CHAVE_TOKEN);
 }
 
 function mostrarPainelAdmin() {
@@ -342,7 +342,7 @@ async function apiAdmin(url, opcoes = {}) {
   });
 
   if (resposta.status === 401) {
-    sessionStorage.removeItem(CHAVE_TOKEN);
+    localStorage.removeItem(CHAVE_TOKEN);
     mostrarLogin();
     mensagemLogin.textContent = "Sua sessão expirou. Entre novamente.";
   }
@@ -410,7 +410,7 @@ formularioLogin.addEventListener("submit", async (evento) => {
       throw new Error("O servidor não retornou o token de acesso.");
     }
 
-    sessionStorage.setItem(CHAVE_TOKEN, resultado.token);
+    localStorage.setItem(CHAVE_TOKEN, resultado.token);
 
     mensagemLogin.textContent = "Login realizado com sucesso!";
 
@@ -444,7 +444,7 @@ document.querySelector("#btn-sair").addEventListener("click", async () => {
     console.error("Erro ao encerrar sessão:", erro);
   }
 
-  sessionStorage.removeItem(CHAVE_TOKEN);
+  localStorage.removeItem(CHAVE_TOKEN);
 
   mostrarLogin();
   mensagemLogin.textContent = "Você saiu da área administrativa.";
