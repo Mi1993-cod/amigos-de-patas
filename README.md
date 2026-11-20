@@ -261,7 +261,7 @@ O funcionamento contempla:
 - Expiração do token configurada para 8 horas por padrão.
 - Remoção do token no logout.
 
-O frontend utiliza `sessionStorage` para armazenar o token durante a sessão.
+O frontend utiliza `localStorage` para armazenar o token durante a sessão.
 
 ## 12. Testes e compilação
 
