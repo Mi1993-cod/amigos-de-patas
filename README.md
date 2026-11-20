@@ -23,13 +23,14 @@ O sistema permite cadastrar animais, receber solicitações de adoção, adminis
 - Cadastro de animais.
 - Consulta das solicitações de adoção.
 - Aprovação e cancelamento de solicitações.
-- Cadastro e consulta de doadores.
+- Cadastro, consulta, edição e exclusão de doadores.
 - Cadastro e consulta de categorias de insumos.
 - Cadastro e consulta de insumos.
 - Registro de doações vinculadas aos doadores.
 - Registro de um ou mais insumos por doação.
 - Controle das quantidades recebidas.
 - Histórico de doações.
+- Proteção do histórico, impedindo a exclusão de doadores que possuam doações vinculadas.
 
 ## 3. Tecnologias utilizadas
 
@@ -229,6 +230,8 @@ A API disponibiliza as seguintes rotas:
 | PUT    | `/api/adocoes/:id/status` | Administrador |
 | GET    | `/api/doadores`           | Administrador |
 | POST   | `/api/doadores`           | Administrador |
+| PUT    | `/api/doadores/:id`       | Administrador |
+| DELETE | `/api/doadores/:id`       | Administrador |
 | GET    | `/api/categorias`         | Administrador |
 | POST   | `/api/categorias`         | Administrador |
 | GET    | `/api/insumos`            | Administrador |
@@ -241,6 +244,8 @@ As rotas administrativas protegidas exigem um token JWT válido no cabeçalho `A
 ```text
 Authorization: Bearer SEU_TOKEN
 ```
+
+A exclusão de doadores que possuam doações vinculadas é impedida para preservar o histórico de doações.
 
 ## 11. Autenticação e segurança
 
@@ -262,10 +267,16 @@ O frontend utiliza `sessionStorage` para armazenar o token durante a sessão.
 
 Para verificar o projeto, utilize:
 
+**Verificação e correção de formatação:**
+
+```bash
+pnpm vp check --fix
+```
+
 **Verificação de código:**
 
 ```bash
-vp check
+pnpm vp check
 ```
 
 **Compilação de produção:**

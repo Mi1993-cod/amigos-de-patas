@@ -68,6 +68,14 @@ document.querySelector("#app").innerHTML = `
 
         <hr />
 
+        <h3>Animais cadastrados</h3>
+        <p>Consulte todos os animais e acompanhe suas situações.</p>
+        <div id="lista-animais-admin">
+          <p>Carregando animais cadastrados...</p>
+        </div>
+
+        <hr />
+
         <section class="cadastro">
           <h3>Gestão de doações</h3>
           <p>Cadastre doadores, categorias, insumos e registre as doações recebidas.</p>
@@ -237,6 +245,13 @@ document.querySelector("#app").innerHTML = `
           placeholder="Conte um pouco sobre o animal..."
         ></textarea>
 
+        <label for="status">Situação do animal *</label>
+        <select id="status" name="status" required>
+          <option value="Disponível">Disponível para adoção</option>
+          <option value="Reservado">Em processo de adoção</option>
+          <option value="Adotado">Adotado</option>
+        </select>
+
         <button type="submit">Cadastrar animal</button>
         <p id="mensagem-cadastro" role="status"></p>
       </form>
@@ -302,9 +317,11 @@ function mostrarLogin() {
 
   document.querySelector("#lista-adocoes").innerHTML =
     "<p>Entre para visualizar as solicitações.</p>";
+
+  document.querySelector("#lista-animais-admin").innerHTML =
+    "<p>Entre para visualizar os animais cadastrados.</p>";
 }
 
-// Centraliza as requisições protegidas e envia o JWT.
 async function apiAdmin(url, opcoes = {}) {
   const token = obterToken();
 
@@ -350,6 +367,7 @@ async function verificarLogin() {
     mostrarPainelAdmin();
 
     await carregarAdocoes();
+    await carregarAnimaisAdmin();
     await carregarDoadores();
     await carregarCategorias();
     await carregarInsumos();
@@ -399,6 +417,7 @@ formularioLogin.addEventListener("submit", async (evento) => {
     mostrarPainelAdmin();
 
     await carregarAdocoes();
+    await carregarAnimaisAdmin();
     await carregarDoadores();
     await carregarCategorias();
     await carregarInsumos();
@@ -448,6 +467,10 @@ async function carregarDoadores() {
 
     const doadores = await resposta.json();
 
+    if (!Array.isArray(doadores)) {
+      throw new Error("A resposta da API não contém uma lista válida de doadores.");
+    }
+
     if (doadores.length === 0) {
       lista.innerHTML = "<p>Nenhum doador cadastrado.</p>";
     } else {
@@ -459,6 +482,22 @@ async function carregarDoadores() {
           <p><strong>Tipo:</strong> ${escaparHTML(doador.tipo_doador)}</p>
           <p><strong>E-mail:</strong> ${escaparHTML(doador.email || "Não informado")}</p>
           <p><strong>Telefone:</strong> ${escaparHTML(doador.telefone || "Não informado")}</p>
+
+          <button
+            type="button"
+            class="btn-editar-doador"
+            data-id="${Number(doador.id_doador)}"
+          >
+            Editar
+          </button>
+
+          <button
+            type="button"
+            class="btn-excluir-doador"
+            data-id="${Number(doador.id_doador)}"
+          >
+            Excluir
+          </button>
         </article>
       `,
         )
@@ -477,11 +516,167 @@ async function carregarDoadores() {
         )
         .join("")}
     `;
+
+    // Eventos dos botões de edição e exclusão
+    lista.querySelectorAll(".btn-editar-doador").forEach((botao) => {
+      botao.addEventListener("click", editarDoador);
+    });
+
+    lista.querySelectorAll(".btn-excluir-doador").forEach((botao) => {
+      botao.addEventListener("click", excluirDoador);
+    });
   } catch (erro) {
     lista.innerHTML = "<p>Não foi possível carregar os doadores.</p>";
     console.error(erro);
   }
 }
+
+// EDITAR DOADOR
+
+async function editarDoador(evento) {
+  const botao = evento.currentTarget;
+  const id = Number(botao.dataset.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    alert("Identificação do doador inválida.");
+    return;
+  }
+
+  const lista = document.querySelector("#lista-doadores");
+  const card = botao.closest(".card-animal");
+
+  if (!card) return;
+
+  const paragrafos = card.querySelectorAll("p");
+
+  const nomeAtual = paragrafos[0]?.textContent.replace("Nome:", "").trim() || "";
+  const tipoAtual = paragrafos[1]?.textContent.replace("Tipo:", "").trim() || "";
+  const emailAtual = paragrafos[2]?.textContent.replace("E-mail:", "").trim() || "";
+  const telefoneAtual = paragrafos[3]?.textContent.replace("Telefone:", "").trim() || "";
+
+  const nome = window.prompt("Nome do doador:", nomeAtual);
+
+  if (nome === null) return;
+
+  if (!nome.trim()) {
+    alert("O nome do doador é obrigatório.");
+    return;
+  }
+
+  const tipoEscolhido = window.prompt(
+    "Tipo de doador:\n1 - Pessoa física\n2 - Empresa",
+    tipoAtual === "Empresa" ? "2" : "1",
+  );
+
+  if (tipoEscolhido === null) return;
+
+  let tipo_doador;
+
+  if (tipoEscolhido.trim() === "1" || tipoEscolhido.trim().toLowerCase() === "pessoa física") {
+    tipo_doador = "Pessoa física";
+  } else if (tipoEscolhido.trim() === "2" || tipoEscolhido.trim().toLowerCase() === "empresa") {
+    tipo_doador = "Empresa";
+  } else {
+    alert("Tipo inválido. Informe 1 para Pessoa física ou 2 para Empresa.");
+    return;
+  }
+
+  const email = window.prompt(
+    "E-mail do doador (deixe em branco se não tiver):",
+    emailAtual === "Não informado" ? "" : emailAtual,
+  );
+
+  if (email === null) return;
+
+  const telefone = window.prompt(
+    "Telefone do doador (deixe em branco se não tiver):",
+    telefoneAtual === "Não informado" ? "" : telefoneAtual,
+  );
+
+  if (telefone === null) return;
+
+  botao.disabled = true;
+
+  try {
+    const resposta = await apiAdmin(`/api/doadores/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        nome: nome.trim(),
+        tipo_doador,
+        email: email.trim(),
+        telefone: telefone.trim(),
+      }),
+    });
+
+    const resultado = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(
+        resultado.mensagem || resultado.erro || "Não foi possível atualizar o doador.",
+      );
+    }
+
+    alert(resultado.mensagem || "Doador atualizado com sucesso!");
+
+    await carregarDoadores();
+  } catch (erro) {
+    alert(erro.message);
+    console.error("Erro ao editar doador:", erro);
+    botao.disabled = false;
+  }
+}
+
+// EXCLUIR DOADOR
+
+async function excluirDoador(evento) {
+  const botao = evento.currentTarget;
+  const id = Number(botao.dataset.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    alert("Identificação do doador inválida.");
+    return;
+  }
+
+  const confirmar = window.confirm(
+    "Tem certeza de que deseja excluir este doador?\n\nSe ele tiver doações registradas, a exclusão não será permitida para preservar o histórico.",
+  );
+
+  if (!confirmar) return;
+
+  botao.disabled = true;
+
+  try {
+    const resposta = await apiAdmin(`/api/doadores/${id}`, {
+      method: "DELETE",
+    });
+
+    const resultado = await resposta.json();
+
+    if (!resposta.ok) {
+      if (resposta.status === 409) {
+        throw new Error(
+          resultado.mensagem ||
+            "Este doador possui doações registradas e não pode ser excluído. O histórico foi preservado.",
+        );
+      }
+
+      throw new Error(resultado.mensagem || resultado.erro || "Não foi possível excluir o doador.");
+    }
+
+    alert(resultado.mensagem || "Doador excluído com sucesso!");
+
+    await carregarDoadores();
+  } catch (erro) {
+    alert(erro.message);
+    console.error("Erro ao excluir doador:", erro);
+    botao.disabled = false;
+  }
+}
+
+// CADASTRAR DOADOR
 
 document.querySelector("#form-doador").addEventListener("submit", async (evento) => {
   evento.preventDefault();
@@ -552,7 +747,7 @@ async function verificarAPI() {
 
 // ==========================================
 // CARREGAR ANIMAIS
-// ROTA PÚBLICA
+// VITRINE PÚBLICA
 // ==========================================
 
 async function carregarAnimais() {
@@ -618,6 +813,78 @@ async function carregarAnimais() {
 }
 
 // ==========================================
+// CARREGAR TODOS OS ANIMAIS
+// SOMENTE ADMINISTRADOR
+// ==========================================
+
+async function carregarAnimaisAdmin() {
+  const lista = document.querySelector("#lista-animais-admin");
+
+  try {
+    const resposta = await apiAdmin("/api/animais");
+
+    if (!resposta.ok) {
+      throw new Error("Erro ao buscar animais cadastrados.");
+    }
+
+    const animais = await resposta.json();
+
+    if (!Array.isArray(animais)) {
+      throw new Error("A resposta da API não contém uma lista válida.");
+    }
+
+    if (animais.length === 0) {
+      lista.innerHTML = "<p>Nenhum animal cadastrado.</p>";
+      return;
+    }
+
+    const situacoes = {
+      Disponível: "Disponível para adoção",
+      Reservado: "Em processo de adoção",
+      Adotado: "Adotado",
+    };
+
+    lista.innerHTML = animais
+      .map(
+        (animal) => `
+          <article class="card-animal">
+            <h3>${escaparHTML(animal.nome)}</h3>
+
+            <p><strong>Espécie:</strong>
+              ${escaparHTML(animal.especie)}
+            </p>
+
+            <p><strong>Raça:</strong>
+              ${escaparHTML(animal.raca || "Não informada")}
+            </p>
+
+            <p><strong>Idade:</strong>
+              ${escaparHTML(animal.idade ?? "Não informada")}
+            </p>
+
+            <p><strong>Sexo:</strong>
+              ${escaparHTML(animal.sexo || "Não informado")}
+            </p>
+
+            <p><strong>Situação:</strong>
+              ${escaparHTML(situacoes[animal.status] || animal.status || "Não informada")}
+            </p>
+
+            <p><strong>Descrição:</strong>
+              ${escaparHTML(animal.descricao || "Sem descrição")}
+            </p>
+          </article>
+        `,
+      )
+      .join("");
+  } catch (erro) {
+    lista.innerHTML = "<p>Não foi possível carregar os animais cadastrados.</p>";
+
+    console.error("Erro ao carregar animais administrativos:", erro);
+  }
+}
+
+// ==========================================
 // CADASTRAR ANIMAL
 // SOMENTE ADMINISTRADOR
 // ==========================================
@@ -656,6 +923,7 @@ async function cadastrarAnimal(evento) {
     formulario.reset();
 
     await carregarAnimais();
+    await carregarAnimaisAdmin();
   } catch (erro) {
     mensagem.textContent = erro.message;
   } finally {
@@ -811,6 +1079,7 @@ async function carregarAdocoes() {
 
           if (status === "Aprovada") {
             await carregarAnimais();
+            await carregarAnimaisAdmin();
           }
         } catch (erro) {
           alert(erro.message);
@@ -835,21 +1104,6 @@ function atualizarDataHora() {
     elemento.textContent = "Data e hora: " + new Date().toLocaleString("pt-BR");
   }
 }
-
-// ==========================================
-// INICIAR APLICAÇÃO
-// ==========================================
-
-document.querySelector("#form-animal").addEventListener("submit", cadastrarAnimal);
-
-verificarAPI().catch(console.error);
-
-void carregarAnimais();
-void verificarLogin();
-
-atualizarDataHora();
-
-setInterval(atualizarDataHora, 1000);
 
 // ==========================================
 // GESTÃO DE CATEGORIAS
@@ -1147,3 +1401,18 @@ async function carregarDoacoes() {
     console.error("Erro ao carregar doações:", erro);
   }
 }
+
+// ==========================================
+// INICIAR APLICAÇÃO
+// ==========================================
+
+document.querySelector("#form-animal").addEventListener("submit", cadastrarAnimal);
+
+verificarAPI().catch(console.error);
+
+void carregarAnimais();
+void verificarLogin();
+
+atualizarDataHora();
+
+setInterval(atualizarDataHora, 1000);

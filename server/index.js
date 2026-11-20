@@ -213,10 +213,11 @@ app.get("/api/animais", async (req, res) => {
 
 app.post("/api/animais", exigirAdmin, async (req, res) => {
   try {
-    const { nome, especie, raca, idade, sexo, descricao } = req.body;
+    const { nome, especie, raca, idade, sexo, descricao, status } = req.body;
 
     const especiesPermitidas = ["Cachorro", "Gato", "Outro"];
     const sexosPermitidos = ["Macho", "Fêmea", "Não informado"];
+    const statusPermitidos = ["Disponível", "Reservado", "Adotado"];
 
     if (typeof nome !== "string" || !nome.trim()) {
       return res.status(400).json({
@@ -247,11 +248,27 @@ app.post("/api/animais", exigirAdmin, async (req, res) => {
       });
     }
 
+    const statusFinal = status || "Disponível";
+
+    if (!statusPermitidos.includes(statusFinal)) {
+      return res.status(400).json({
+        mensagem: "Selecione uma situação válida para o animal.",
+      });
+    }
+
     const [resultado] = await pool.query(
       `INSERT INTO animais
-      (nome, especie, raca, idade, sexo, descricao)
-      VALUES (?, ?, ?, ?, ?, ?)`,
-      [nome.trim(), especie, raca || null, idadeNumerica, sexoFinal, descricao || null],
+      (nome, especie, raca, idade, sexo, descricao, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        nome.trim(),
+        especie,
+        raca || null,
+        idadeNumerica,
+        sexoFinal,
+        descricao || null,
+        statusFinal,
+      ],
     );
 
     res.status(201).json({
@@ -487,7 +504,7 @@ app.put("/api/adocoes/:id/status", exigirAdmin, async (req, res) => {
 });
 
 // ==========================================
-// CADASTRO E CONSULTA DE DOADORES
+// CADASTRO, CONSULTA, EDIÇÃO E EXCLUSÃO DE DOADORES
 // SOMENTE ADMINISTRADOR
 // ==========================================
 
@@ -500,11 +517,11 @@ app.get("/api/doadores", exigirAdmin, async (req, res) => {
        ORDER BY nome`,
     );
 
-    res.json(doadores);
+    return res.json(doadores);
   } catch (erro) {
     console.error("Erro ao listar doadores:", erro);
 
-    res.status(500).json({
+    return res.status(500).json({
       mensagem: "Erro ao consultar doadores.",
     });
   }
@@ -534,7 +551,7 @@ app.post("/api/doadores", exigirAdmin, async (req, res) => {
       [nome.trim(), tipo_doador, email?.trim() || null, telefone?.trim() || null],
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       mensagem: "Doador cadastrado com sucesso!",
       id_doador: resultado.insertId,
     });
@@ -547,8 +564,113 @@ app.post("/api/doadores", exigirAdmin, async (req, res) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       mensagem: "Erro ao cadastrar doador.",
+    });
+  }
+});
+
+// Editar doador
+app.put("/api/doadores/:id", exigirAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { nome, tipo_doador, email, telefone } = req.body;
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        mensagem: "Doador inválido.",
+      });
+    }
+
+    if (typeof nome !== "string" || !nome.trim()) {
+      return res.status(400).json({
+        mensagem: "Informe o nome do doador.",
+      });
+    }
+
+    if (!["Pessoa física", "Empresa"].includes(tipo_doador)) {
+      return res.status(400).json({
+        mensagem: "Selecione um tipo de doador válido.",
+      });
+    }
+
+    if (
+      (email !== undefined && email !== null && typeof email !== "string") ||
+      (telefone !== undefined && telefone !== null && typeof telefone !== "string")
+    ) {
+      return res.status(400).json({
+        mensagem: "E-mail ou telefone inválido.",
+      });
+    }
+
+    const [doadores] = await pool.execute("SELECT id_doador FROM doadores WHERE id_doador = ?", [
+      id,
+    ]);
+
+    if (doadores.length === 0) {
+      return res.status(404).json({
+        mensagem: "Doador não encontrado.",
+      });
+    }
+
+    await pool.execute(
+      `UPDATE doadores
+       SET nome = ?, tipo_doador = ?, email = ?, telefone = ?
+       WHERE id_doador = ?`,
+      [nome.trim(), tipo_doador, email?.trim() || null, telefone?.trim() || null, id],
+    );
+
+    return res.json({
+      mensagem: "Doador atualizado com sucesso!",
+    });
+  } catch (erro) {
+    console.error("Erro ao editar doador:", erro);
+
+    if (erro.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        mensagem: "Este e-mail já está cadastrado.",
+      });
+    }
+
+    return res.status(500).json({
+      mensagem: "Erro ao atualizar doador.",
+    });
+  }
+});
+
+// Excluir doador
+app.delete("/api/doadores/:id", exigirAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        mensagem: "Doador inválido.",
+      });
+    }
+
+    const [resultado] = await pool.execute("DELETE FROM doadores WHERE id_doador = ?", [id]);
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({
+        mensagem: "Doador não encontrado.",
+      });
+    }
+
+    return res.json({
+      mensagem: "Doador excluído com sucesso!",
+    });
+  } catch (erro) {
+    console.error("Erro ao excluir doador:", erro);
+
+    if (erro.code === "ER_ROW_IS_REFERENCED_2" || erro.code === "ER_ROW_IS_REFERENCED") {
+      return res.status(409).json({
+        mensagem: "Este doador possui doações registradas e não pode ser excluído.",
+      });
+    }
+
+    return res.status(500).json({
+      mensagem: "Erro ao excluir doador.",
     });
   }
 });
