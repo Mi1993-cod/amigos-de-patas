@@ -6,6 +6,11 @@ import jwt from "jsonwebtoken";
 
 dotenv.config();
 
+if (!process.env.JWT_SECRET) {
+  console.error("ERRO: JWT_SECRET não configurado no arquivo .env.");
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
