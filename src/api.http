@@ -1,0 +1,72 @@
+### Teste 1 - Verificar se a API está funcionando
+GET http://localhost:3000/api/health
+
+### Teste 2 - Login com JWT
+POST http://localhost:3000/api/admin/login
+Content-Type: application/json
+
+{
+  "email": "miriambelentane1@gmail.com",
+  "senha": "Caua2016."
+}
+
+### Teste 3 - Consultar doadores com token JWT
+GET http://localhost:3000/api/doadores
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibm9tZSI6Ik1pcmlhbSBCZWxlbnRhbmUgUm9kcmlndWVzIiwiZW1haWwiOiJtaXJpYW1iZWxlbnRhbmUxQGdtYWlsLmNvbSIsImlhdCI6MTc5NTE1MTk0NywiZXhwIjoxNzk1MTgwNzQ3fQ.pmDh2E-3cTtlWnbEySryszxWTIDsIY5bukh-5KSaqRA
+
+### Teste 4 - Consultar doadores sem token
+GET http://localhost:3000/api/doadores
+
+### Teste 5 - Consultar doadores com token inválido
+GET http://localhost:3000/api/doadores
+Authorization: Bearer token_invalido_123
+
+### Teste 6 - Login com senha incorreta
+POST http://localhost:3000/api/admin/login
+Content-Type: application/json
+
+{
+  "email": "miriambelentane1@gmail.com",
+  "senha": "senha_errada_123"
+}
+
+### Teste 7 - Login com e-mail inexistente
+POST http://localhost:3000/api/admin/login
+Content-Type: application/json
+
+{
+  "email": "naoexiste@exemplo.com",
+  "senha": "senha_teste_123"
+}
+
+### Teste 8 - Login sem senha
+POST http://localhost:3000/api/admin/login
+Content-Type: application/json
+
+{
+  "email": "miriambelentane1@gmail.com"
+}
+
+### Teste 9 - Consultar doadores cadastrados
+GET http://localhost:3000/api/doadores
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibm9tZSI6Ik1pcmlhbSBCZWxlbnRhbmUgUm9kcmlndWVzIiwiZW1haWwiOiJtaXJpYW1iZWxlbnRhbmUxQGdtYWlsLmNvbSIsImlhdCI6MTc5NTE1Mzc3MiwiZXhwIjoxNzk1MTgyNTcyfQ.LNXfsM_mC5jqLb3hKvN8vqtM42iHABXANt-J6BD12NA
+
+### Teste 10 - Cadastrar doador com token
+POST http://localhost:3000/api/doadores
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibm9tZSI6Ik1pcmlhbSBCZWxlbnRhbmUgUm9kcmlndWVzIiwiZW1haWwiOiJtaXJpYW1iZWxlbnRhbmUxQGdtYWlsLmNvbSIsImlhdCI6MTc5NTE1Mzc3MiwiZXhwIjoxNzk1MTgyNTcyfQ.LNXfsM_mC5jqLb3hKvN8vqtM42iHABXANt-J6BD12NA
+Content-Type: application/json
+
+{
+  "nome": "TESTE API POST",
+  "tipo_doador": "Pessoa física",
+  "email": null,
+  "telefone": null
+}
+### Teste 11 - Tentar cadastrar doador sem token
+POST http://localhost:3000/api/doadores
+Content-Type: application/json
+
+{
+  "nome": "TESTE SEM TOKEN",
+  "tipo_doador": "Pessoa física"
+}

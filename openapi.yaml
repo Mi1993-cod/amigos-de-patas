@@ -1,0 +1,506 @@
+openapi: 3.0.3
+
+info:
+  title: API Amigos de Patas
+  description: API REST para gerenciamento de animais, adoções, doadores, insumos e doações da ONG Amigos de Patas.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor local de desenvolvimento
+
+tags:
+  - name: Autenticação
+  - name: Animais
+  - name: Adoções
+  - name: Doadores
+  - name: Categorias
+  - name: Insumos
+  - name: Doações
+  - name: Saúde
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Informe o token JWT recebido no login.
+
+  schemas:
+    Login:
+      type: object
+      required:
+        - email
+        - senha
+      properties:
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+          format: password
+
+    Doador:
+      type: object
+      required:
+        - nome
+        - tipo_doador
+      properties:
+        nome:
+          type: string
+        tipo_doador:
+          type: string
+          enum:
+            - Pessoa física
+            - Empresa
+        email:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+
+    InsumoDoacao:
+      type: object
+      required:
+        - id_insumo
+        - quantidade
+      properties:
+        id_insumo:
+          type: integer
+        quantidade:
+          type: number
+          minimum: 0.01
+
+paths:
+  /api/health:
+    get:
+      tags:
+        - Saúde
+      summary: Verificar funcionamento da API
+      security: []
+      responses:
+        "200":
+          description: API funcionando.
+
+  /api/db-health:
+    get:
+      tags:
+        - Saúde
+      summary: Verificar conexão com MySQL
+      security: []
+      responses:
+        "200":
+          description: Banco de dados conectado.
+        "500":
+          description: Erro na conexão com o banco.
+
+  /api/admin/login:
+    post:
+      tags:
+        - Autenticação
+      summary: Realizar login administrativo
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Login"
+      responses:
+        "200":
+          description: Login realizado com sucesso. Retorna token JWT e usuário.
+        "400":
+          description: Dados de login inválidos.
+        "401":
+          description: E-mail ou senha incorretos.
+        "500":
+          description: Erro na autenticação.
+
+  /api/admin/me:
+    get:
+      tags:
+        - Autenticação
+      summary: Consultar administrador autenticado
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Administrador autenticado.
+        "401":
+          description: Token ausente, inválido ou expirado.
+
+  /api/admin/logout:
+    post:
+      tags:
+        - Autenticação
+      summary: Encerrar sessão no cliente
+      security: []
+      responses:
+        "200":
+          description: Sessão encerrada.
+
+  /api/animais:
+    get:
+      tags:
+        - Animais
+      summary: Listar animais cadastrados
+      security: []
+      responses:
+        "200":
+          description: Lista de animais.
+    post:
+      tags:
+        - Animais
+      summary: Cadastrar animal
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nome
+                - especie
+              properties:
+                nome:
+                  type: string
+                especie:
+                  type: string
+                  enum:
+                    - Cachorro
+                    - Gato
+                    - Outro
+                raca:
+                  type: string
+                  nullable: true
+                idade:
+                  type: integer
+                  nullable: true
+                sexo:
+                  type: string
+                descricao:
+                  type: string
+                  nullable: true
+                status:
+                  type: string
+      responses:
+        "201":
+          description: Animal cadastrado.
+        "400":
+          description: Dados inválidos.
+        "401":
+          description: Não autenticado.
+
+  /api/adocoes:
+    post:
+      tags:
+        - Adoções
+      summary: Enviar solicitação pública de adoção
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - animal_id
+                - nome
+                - email
+                - telefone
+                - cidade
+              properties:
+                animal_id:
+                  type: integer
+                nome:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                telefone:
+                  type: string
+                cidade:
+                  type: string
+      responses:
+        "201":
+          description: Solicitação enviada.
+        "400":
+          description: Dados inválidos.
+        "404":
+          description: Animal não encontrado.
+        "409":
+          description: Animal indisponível.
+    get:
+      tags:
+        - Adoções
+      summary: Listar solicitações de adoção
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Lista de solicitações.
+        "401":
+          description: Não autenticado.
+
+  /api/adocoes/{id}/status:
+    put:
+      tags:
+        - Adoções
+      summary: Aprovar ou cancelar solicitação
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - Aprovada
+                    - Cancelada
+      responses:
+        "200":
+          description: Solicitação atualizada.
+        "400":
+          description: Dados inválidos.
+        "401":
+          description: Não autenticado.
+        "404":
+          description: Solicitação não encontrada.
+        "409":
+          description: Solicitação já processada ou animal indisponível.
+
+  /api/doadores:
+    get:
+      tags:
+        - Doadores
+      summary: Listar doadores
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Lista de doadores.
+        "401":
+          description: Não autenticado.
+    post:
+      tags:
+        - Doadores
+      summary: Cadastrar doador
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Doador"
+      responses:
+        "201":
+          description: Doador cadastrado.
+        "400":
+          description: Dados inválidos.
+        "401":
+          description: Não autenticado.
+        "409":
+          description: E-mail já cadastrado.
+
+  /api/doadores/{id}:
+    put:
+      tags:
+        - Doadores
+      summary: Editar doador
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Doador"
+      responses:
+        "200":
+          description: Doador atualizado.
+        "400":
+          description: Dados inválidos.
+        "401":
+          description: Não autenticado.
+        "404":
+          description: Doador não encontrado.
+        "409":
+          description: E-mail já cadastrado.
+    delete:
+      tags:
+        - Doadores
+      summary: Excluir doador
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Doador excluído.
+        "401":
+          description: Não autenticado.
+        "404":
+          description: Doador não encontrado.
+        "409":
+          description: Doador possui doações vinculadas.
+
+  /api/categorias:
+    get:
+      tags:
+        - Categorias
+      summary: Listar categorias
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Lista de categorias.
+        "401":
+          description: Não autenticado.
+    post:
+      tags:
+        - Categorias
+      summary: Cadastrar categoria
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nome
+              properties:
+                nome:
+                  type: string
+      responses:
+        "201":
+          description: Categoria cadastrada.
+        "400":
+          description: Nome inválido.
+        "401":
+          description: Não autenticado.
+        "409":
+          description: Categoria já cadastrada.
+
+  /api/insumos:
+    get:
+      tags:
+        - Insumos
+      summary: Listar insumos
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Lista de insumos.
+        "401":
+          description: Não autenticado.
+    post:
+      tags:
+        - Insumos
+      summary: Cadastrar insumo
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nome
+                - unidade
+              properties:
+                nome:
+                  type: string
+                unidade:
+                  type: string
+                id_categoria:
+                  type: integer
+                  nullable: true
+      responses:
+        "201":
+          description: Insumo cadastrado.
+        "400":
+          description: Dados inválidos.
+        "401":
+          description: Não autenticado.
+        "404":
+          description: Categoria não encontrada.
+
+  /api/doacoes:
+    get:
+      tags:
+        - Doações
+      summary: Consultar histórico de doações
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Histórico de doações.
+        "401":
+          description: Não autenticado.
+    post:
+      tags:
+        - Doações
+      summary: Registrar doação com um ou mais insumos
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_doador
+                - data_doacao
+                - insumos
+              properties:
+                id_doador:
+                  type: integer
+                data_doacao:
+                  type: string
+                  format: date
+                observacao:
+                  type: string
+                  nullable: true
+                insumos:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: "#/components/schemas/InsumoDoacao"
+      responses:
+        "201":
+          description: Doação registrada.
+        "400":
+          description: Dados inválidos.
+        "401":
+          description: Não autenticado.

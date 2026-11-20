@@ -46,6 +46,7 @@ O sistema permite cadastrar animais, receber solicitações de adoção, adminis
 - Node.js
 - Express
 - Dotenv
+- JSON Web Token (jsonwebtoken)
 
 **Banco de dados**
 
@@ -55,7 +56,7 @@ O sistema permite cadastrar animais, receber solicitações de adoção, adminis
 **Segurança**
 
 - bcryptjs para geração e verificação de hashes de senhas.
-- JSON Web Token (JWT) para autenticação.
+- jsonwebtoken para autenticação com JWT.
 - Variáveis de ambiente para proteger informações sensíveis.
 
 **Gerenciamento de pacotes**
@@ -210,7 +211,7 @@ Acesse o endereço apresentado pelo terminal. Normalmente:
 http://localhost:5173/
 ```
 
-Caso a porta 5173 esteja ocupada, o Vite+ poderá utilizar outra porta disponível, como a 5174.
+Caso a porta 5173 esteja ocupada, o Vite+ poderá utilizar outra porta disponível, como 5174 ou 5175.
 
 ## 10. Rotas da API
 
@@ -270,13 +271,13 @@ Para verificar o projeto, utilize:
 **Verificação e correção de formatação:**
 
 ```bash
-pnpm vp check --fix
+vp check --fix
 ```
 
 **Verificação de código:**
 
 ```bash
-pnpm vp check
+vp check
 ```
 
 **Compilação de produção:**

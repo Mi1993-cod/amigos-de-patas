@@ -1,5 +1,20 @@
 import "./style.css";
 
+import {
+  verificarSaudeAPI,
+  listarAnimais,
+  cadastrarAnimal as enviarCadastroAnimal,
+  solicitarAdocao as enviarSolicitacaoAdocao,
+  atualizarStatusAdocao,
+  listarCategorias,
+  listarInsumos,
+} from "./api.js";
+
+import { renderDoadores } from "./pages/doadores.js";
+import { renderNovaDoacao, renderHistoricoDoacoes } from "./pages/doacoes.js";
+
+const CHAVE_TOKEN = "amigos_patas_token";
+
 document.querySelector("#app").innerHTML = `
   <main class="pagina">
     <header>
@@ -31,28 +46,18 @@ document.querySelector("#app").innerHTML = `
 
       <form id="form-login">
         <label for="email-admin">E-mail</label>
-        <input
-          type="email"
-          id="email-admin"
-          name="email"
-          autocomplete="username"
-          required
-        />
+        <input type="email" id="email-admin" name="email"
+          autocomplete="username" required />
 
         <label for="senha-admin">Senha</label>
-        <input
-          type="password"
-          id="senha-admin"
-          name="senha"
-          autocomplete="current-password"
-          required
-        />
+        <input type="password" id="senha-admin" name="senha"
+          autocomplete="current-password" required />
 
         <button type="submit" id="btn-login">Entrar</button>
         <p id="mensagem-login" role="status"></p>
       </form>
 
-      <div id="painel-admin" style="display: none;">
+      <div id="painel-admin" hidden>
         <p>Você está conectado como administrador.</p>
 
         <button type="button" id="btn-sair">
@@ -78,61 +83,41 @@ document.querySelector("#app").innerHTML = `
 
         <section class="cadastro">
           <h3>Gestão de doações</h3>
-          <p>Cadastre doadores, categorias, insumos e registre as doações recebidas.</p>
+          <p>Gerencie doadores e registre as doações recebidas.</p>
 
-          <h4>Cadastro de doadores</h4>
-          <form id="form-doador">
-            <label for="nome-doador">Nome do doador *</label>
-            <input id="nome-doador" name="nome" type="text" required maxlength="150" />
+          <nav class="menu-admin" aria-label="Menu de gestão de doações">
+            <a href="#/doadores">Doadores</a>
+            <a href="#/doacoes/nova">Registrar doação</a>
+            <a href="#/doacoes">Histórico de doações</a>
+          </nav>
 
-            <label for="tipo-doador">Tipo de doador *</label>
-            <select id="tipo-doador" name="tipo_doador" required>
-              <option value="">Selecione</option>
-              <option value="Pessoa física">Pessoa física</option>
-              <option value="Empresa">Empresa</option>
-            </select>
-
-            <label for="email-doador">E-mail</label>
-            <input id="email-doador" name="email" type="email" maxlength="150" />
-
-            <label for="telefone-doador">Telefone</label>
-            <input id="telefone-doador" name="telefone" type="tel" maxlength="20" />
-
-            <button type="submit">Cadastrar doador</button>
-            <p id="mensagem-doador" role="status"></p>
-          </form>
-
-          <h4>Doadores cadastrados</h4>
-          <div id="lista-doadores">
-            <p>Carregando doadores...</p>
+          <div id="conteudo-rota" aria-live="polite">
+            <p>Selecione uma opção do menu.</p>
           </div>
 
           <hr />
 
-          <h4>Cadastro de categorias</h4>
+          <h3>Cadastro de categorias</h3>
           <form id="form-categoria">
             <label for="nome-categoria">Nome da categoria *</label>
-            <input id="nome-categoria" name="nome" type="text" required maxlength="100" />
+            <input id="nome-categoria" name="nome" type="text"
+              required maxlength="100" />
             <button type="submit">Cadastrar categoria</button>
             <p id="mensagem-categoria" role="status"></p>
           </form>
 
           <hr />
 
-          <h4>Cadastro de insumos</h4>
+          <h3>Cadastro de insumos</h3>
           <form id="form-insumo">
             <label for="nome-insumo">Nome do insumo *</label>
-            <input id="nome-insumo" name="nome" type="text" required maxlength="100" />
+            <input id="nome-insumo" name="nome" type="text"
+              required maxlength="100" />
 
             <label for="unidade-insumo">Unidade *</label>
-            <input
-              id="unidade-insumo"
-              name="unidade"
-              type="text"
-              required
-              maxlength="30"
-              placeholder="Ex.: kg, unidade, pacote"
-            />
+            <input id="unidade-insumo" name="unidade" type="text"
+              required maxlength="30"
+              placeholder="Ex.: kg, unidade, pacote" />
 
             <label for="categoria-insumo">Categoria</label>
             <select id="categoria-insumo" name="id_categoria">
@@ -142,66 +127,18 @@ document.querySelector("#app").innerHTML = `
             <button type="submit">Cadastrar insumo</button>
             <p id="mensagem-insumo" role="status"></p>
           </form>
-
-          <hr />
-
-          <h4>Registrar doação</h4>
-          <form id="form-doacao">
-            <label for="doador-doacao">Doador *</label>
-            <select id="doador-doacao" name="id_doador" required>
-              <option value="">Selecione um doador</option>
-            </select>
-
-            <label for="data-doacao">Data da doação *</label>
-            <input id="data-doacao" name="data_doacao" type="date" required />
-
-            <label for="insumo-doacao">Insumo *</label>
-            <select id="insumo-doacao">
-              <option value="">Selecione um insumo</option>
-            </select>
-
-            <label for="quantidade-doacao">Quantidade *</label>
-            <input id="quantidade-doacao" type="number" min="0.01" step="0.01" />
-
-            <button type="button" id="btn-adicionar-insumo">
-              Adicionar insumo à doação
-            </button>
-
-            <div id="itens-doacao">
-              <p>Nenhum insumo adicionado.</p>
-            </div>
-
-            <label for="observacao-doacao">Observação</label>
-            <textarea id="observacao-doacao" name="observacao" rows="3"></textarea>
-
-            <button type="submit">Registrar doação</button>
-            <p id="mensagem-doacao" role="status"></p>
-          </form>
-
-          <hr />
-
-          <h4>Histórico de doações</h4>
-          <div id="lista-doacoes">
-            <p>Carregando histórico...</p>
-          </div>
         </section>
       </div>
     </section>
 
-    <section class="cadastro" id="secao-cadastro" style="display: none;">
+    <section class="cadastro" id="secao-cadastro" hidden>
       <h2>Cadastro de animais</h2>
       <p>Preencha os dados para cadastrar um novo amiguinho.</p>
 
       <form id="form-animal">
         <label for="nome">Nome do animal *</label>
-        <input
-          type="text"
-          id="nome"
-          name="nome"
-          maxlength="100"
-          placeholder="Ex.: Bob"
-          required
-        />
+        <input type="text" id="nome" name="nome" maxlength="100"
+          placeholder="Ex.: Bob" required />
 
         <label for="especie">Espécie *</label>
         <select id="especie" name="especie" required>
@@ -212,23 +149,12 @@ document.querySelector("#app").innerHTML = `
         </select>
 
         <label for="raca">Raça</label>
-        <input
-          type="text"
-          id="raca"
-          name="raca"
-          maxlength="100"
-          placeholder="Ex.: Labrador"
-        />
+        <input type="text" id="raca" name="raca" maxlength="100"
+          placeholder="Ex.: Labrador" />
 
         <label for="idade">Idade em anos</label>
-        <input
-          type="number"
-          id="idade"
-          name="idade"
-          min="0"
-          step="1"
-          placeholder="Ex.: 2"
-        />
+        <input type="number" id="idade" name="idade" min="0" step="1"
+          placeholder="Ex.: 2" />
 
         <label for="sexo">Sexo</label>
         <select id="sexo" name="sexo">
@@ -238,12 +164,8 @@ document.querySelector("#app").innerHTML = `
         </select>
 
         <label for="descricao">Descrição</label>
-        <textarea
-          id="descricao"
-          name="descricao"
-          rows="4"
-          placeholder="Conte um pouco sobre o animal..."
-        ></textarea>
+        <textarea id="descricao" name="descricao" rows="4"
+          placeholder="Conte um pouco sobre o animal..."></textarea>
 
         <label for="status">Situação do animal *</label>
         <select id="status" name="status" required>
@@ -260,7 +182,6 @@ document.querySelector("#app").innerHTML = `
     <section class="animais">
       <h2>Conheça nossos animais</h2>
       <p>Encontre um amigo para fazer parte da sua família!</p>
-
       <div id="lista-animais">
         <p>Carregando animais...</p>
       </div>
@@ -287,32 +208,26 @@ function escaparHTML(valor) {
   );
 }
 
-// ==========================================
-// AUTENTICAÇÃO JWT
-// ==========================================
-
-const CHAVE_TOKEN = "amigos_patas_token";
-
 const formularioLogin = document.querySelector("#form-login");
 const painelAdmin = document.querySelector("#painel-admin");
 const secaoCadastro = document.querySelector("#secao-cadastro");
 const mensagemLogin = document.querySelector("#mensagem-login");
+const conteudoRota = document.querySelector("#conteudo-rota");
 
 function obterToken() {
   return localStorage.getItem(CHAVE_TOKEN);
 }
 
 function mostrarPainelAdmin() {
-  formularioLogin.style.display = "none";
-  painelAdmin.style.display = "block";
-  secaoCadastro.style.display = "block";
+  formularioLogin.hidden = true;
+  painelAdmin.hidden = false;
+  secaoCadastro.hidden = false;
 }
 
 function mostrarLogin() {
-  formularioLogin.style.display = "block";
-  painelAdmin.style.display = "none";
-  secaoCadastro.style.display = "none";
-
+  formularioLogin.hidden = false;
+  painelAdmin.hidden = true;
+  secaoCadastro.hidden = true;
   formularioLogin.reset();
 
   document.querySelector("#lista-adocoes").innerHTML =
@@ -320,6 +235,8 @@ function mostrarLogin() {
 
   document.querySelector("#lista-animais-admin").innerHTML =
     "<p>Entre para visualizar os animais cadastrados.</p>";
+
+  conteudoRota.innerHTML = "<p>Faça login para acessar a gestão de doações.</p>";
 }
 
 async function apiAdmin(url, opcoes = {}) {
@@ -331,14 +248,12 @@ async function apiAdmin(url, opcoes = {}) {
     throw new Error("Autenticação necessária.");
   }
 
-  const cabecalhos = {
-    ...opcoes.headers,
-    Authorization: `Bearer ${token}`,
-  };
-
   const resposta = await fetch(url, {
     ...opcoes,
-    headers: cabecalhos,
+    headers: {
+      ...opcoes.headers,
+      Authorization: `Bearer ${token}`,
+    },
   });
 
   if (resposta.status === 401) {
@@ -350,416 +265,186 @@ async function apiAdmin(url, opcoes = {}) {
   return resposta;
 }
 
-async function verificarLogin() {
+// ==========================================
+// NAVEGAÇÃO DAS TELAS DA AULA 3
+// ==========================================
+
+async function navegar() {
   if (!obterToken()) {
-    mostrarLogin();
     return;
   }
 
+  const rota = window.location.hash || "#/doadores";
+
+  conteudoRota.replaceChildren();
+
   try {
-    const resposta = await apiAdmin("/api/admin/me");
-
-    if (!resposta.ok) {
-      mostrarLogin();
-      return;
+    if (rota === "#/doadores") {
+      renderDoadores(conteudoRota);
+    } else if (rota === "#/doacoes/nova") {
+      renderNovaDoacao(conteudoRota);
+    } else if (rota === "#/doacoes") {
+      await renderHistoricoDoacoes(conteudoRota);
+    } else {
+      conteudoRota.innerHTML = `
+        <p>Essa página não foi encontrada.</p>
+        <a href="#/doadores">Voltar para doadores</a>
+      `;
     }
-
-    mostrarPainelAdmin();
-
-    await carregarAdocoes();
-    await carregarAnimaisAdmin();
-    await carregarDoadores();
-    await carregarCategorias();
-    await carregarInsumos();
-    await carregarDoacoes();
   } catch (erro) {
-    console.error("Erro ao verificar login:", erro);
-    mostrarLogin();
+    console.error("Erro ao abrir a tela:", erro);
+    conteudoRota.textContent = "Não foi possível abrir esta tela. Tente novamente.";
   }
 }
 
-// ==========================================
-// ENTRAR NA ÁREA ADMINISTRATIVA
-// ==========================================
+window.addEventListener("hashchange", navegar);
 
-formularioLogin.addEventListener("submit", async (evento) => {
-  evento.preventDefault();
-
-  const botao = document.querySelector("#btn-login");
-  const dados = Object.fromEntries(new FormData(formularioLogin).entries());
-
-  botao.disabled = true;
-  mensagemLogin.textContent = "Verificando acesso...";
-
-  try {
-    const resposta = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(dados),
-    });
-
-    const resultado = await resposta.json();
-
-    if (!resposta.ok) {
-      throw new Error(resultado.mensagem || "Não foi possível entrar.");
+document.querySelectorAll(".menu-admin a").forEach((link) => {
+  link.addEventListener("click", () => {
+    if (!obterToken()) {
+      mostrarLogin();
     }
-
-    if (!resultado.token) {
-      throw new Error("O servidor não retornou o token de acesso.");
-    }
-
-    localStorage.setItem(CHAVE_TOKEN, resultado.token);
-
-    mensagemLogin.textContent = "Login realizado com sucesso!";
-
-    mostrarPainelAdmin();
-
-    await carregarAdocoes();
-    await carregarAnimaisAdmin();
-    await carregarDoadores();
-    await carregarCategorias();
-    await carregarInsumos();
-    await carregarDoacoes();
-  } catch (erro) {
-    mensagemLogin.textContent = erro.message;
-  } finally {
-    botao.disabled = false;
-  }
+  });
 });
 
 // ==========================================
-// SAIR DA ÁREA ADMINISTRATIVA
+// CARREGAR DADOS ADMINISTRATIVOS
 // ==========================================
 
-document.querySelector("#btn-sair").addEventListener("click", async () => {
+async function carregarAdocoes() {
+  const lista = document.querySelector("#lista-adocoes");
+
   try {
-    if (obterToken()) {
-      await apiAdmin("/api/admin/logout", {
-        method: "POST",
+    const resposta = await apiAdmin("/api/adocoes");
+    if (!resposta.ok) throw new Error("Erro ao buscar solicitações.");
+
+    const adocoes = await resposta.json();
+
+    if (!Array.isArray(adocoes) || adocoes.length === 0) {
+      lista.innerHTML = "<p>Nenhuma solicitação recebida.</p>";
+      return;
+    }
+
+    lista.innerHTML = adocoes
+      .map(
+        (adocao) => `
+      <article class="card-animal">
+        <h3>Solicitação nº ${Number(adocao.id)}</h3>
+        <p><strong>Animal:</strong> ${escaparHTML(adocao.animal)}</p>
+        <p><strong>Interessado:</strong> ${escaparHTML(adocao.interessado)}</p>
+        <p><strong>E-mail:</strong> ${escaparHTML(adocao.email)}</p>
+        <p><strong>Telefone:</strong> ${escaparHTML(adocao.telefone)}</p>
+        <p><strong>Cidade:</strong> ${escaparHTML(adocao.cidade)}</p>
+        <p><strong>Status:</strong> ${escaparHTML(adocao.status)}</p>
+        ${
+          adocao.status === "Pendente"
+            ? `
+              <button type="button" class="btn-aprovar"
+                data-id="${Number(adocao.id)}">Aprovar adoção</button>
+              <button type="button" class="btn-cancelar"
+                data-id="${Number(adocao.id)}">Cancelar solicitação</button>
+            `
+            : ""
+        }
+        <p><strong>Data:</strong>
+          ${escaparHTML(new Date(adocao.data_solicitacao).toLocaleString("pt-BR"))}
+        </p>
+      </article>
+    `,
+      )
+      .join("");
+
+    lista.querySelectorAll(".btn-aprovar, .btn-cancelar").forEach((botao) => {
+      botao.addEventListener("click", async () => {
+        const status = botao.classList.contains("btn-aprovar") ? "Aprovada" : "Cancelada";
+
+        const confirmar = window.confirm(
+          status === "Aprovada"
+            ? "Deseja aprovar esta adoção?"
+            : "Deseja cancelar esta solicitação?",
+        );
+
+        if (!confirmar) return;
+
+        botao.disabled = true;
+
+        try {
+          const resultado = await atualizarStatusAdocao(Number(botao.dataset.id), status);
+
+          alert(resultado.mensagem || "Solicitação atualizada.");
+          await carregarAdocoes();
+
+          if (status === "Aprovada") {
+            await carregarAnimais();
+            await carregarAnimaisAdmin();
+          }
+        } catch (erro) {
+          alert(erro.message);
+          botao.disabled = false;
+        }
       });
-    }
-  } catch (erro) {
-    console.error("Erro ao encerrar sessão:", erro);
-  }
-
-  localStorage.removeItem(CHAVE_TOKEN);
-
-  mostrarLogin();
-  mensagemLogin.textContent = "Você saiu da área administrativa.";
-});
-
-// ==========================================
-// GESTÃO DE DOADORES
-// ==========================================
-
-async function carregarDoadores() {
-  const lista = document.querySelector("#lista-doadores");
-  const seletor = document.querySelector("#doador-doacao");
-
-  try {
-    const resposta = await apiAdmin("/api/doadores");
-
-    if (!resposta.ok) {
-      throw new Error("Erro ao carregar doadores.");
-    }
-
-    const doadores = await resposta.json();
-
-    if (!Array.isArray(doadores)) {
-      throw new Error("A resposta da API não contém uma lista válida de doadores.");
-    }
-
-    if (doadores.length === 0) {
-      lista.innerHTML = "<p>Nenhum doador cadastrado.</p>";
-    } else {
-      lista.innerHTML = doadores
-        .map(
-          (doador) => `
-        <article class="card-animal">
-          <p><strong>Nome:</strong> ${escaparHTML(doador.nome)}</p>
-          <p><strong>Tipo:</strong> ${escaparHTML(doador.tipo_doador)}</p>
-          <p><strong>E-mail:</strong> ${escaparHTML(doador.email || "Não informado")}</p>
-          <p><strong>Telefone:</strong> ${escaparHTML(doador.telefone || "Não informado")}</p>
-
-          <button
-            type="button"
-            class="btn-editar-doador"
-            data-id="${Number(doador.id_doador)}"
-          >
-            Editar
-          </button>
-
-          <button
-            type="button"
-            class="btn-excluir-doador"
-            data-id="${Number(doador.id_doador)}"
-          >
-            Excluir
-          </button>
-        </article>
-      `,
-        )
-        .join("");
-    }
-
-    seletor.innerHTML = `
-      <option value="">Selecione um doador</option>
-      ${doadores
-        .map(
-          (doador) => `
-        <option value="${Number(doador.id_doador)}">
-          ${escaparHTML(doador.nome)}
-        </option>
-      `,
-        )
-        .join("")}
-    `;
-
-    // Eventos dos botões de edição e exclusão
-    lista.querySelectorAll(".btn-editar-doador").forEach((botao) => {
-      botao.addEventListener("click", editarDoador);
-    });
-
-    lista.querySelectorAll(".btn-excluir-doador").forEach((botao) => {
-      botao.addEventListener("click", excluirDoador);
     });
   } catch (erro) {
-    lista.innerHTML = "<p>Não foi possível carregar os doadores.</p>";
+    lista.innerHTML = "<p>Não foi possível carregar as solicitações.</p>";
     console.error(erro);
   }
 }
 
-// EDITAR DOADOR
-
-async function editarDoador(evento) {
-  const botao = evento.currentTarget;
-  const id = Number(botao.dataset.id);
-
-  if (!Number.isInteger(id) || id <= 0) {
-    alert("Identificação do doador inválida.");
-    return;
-  }
-
-  const card = botao.closest(".card-animal");
-
-  if (!card) return;
-
-  const paragrafos = card.querySelectorAll("p");
-
-  const nomeAtual = paragrafos[0]?.textContent.replace("Nome:", "").trim() || "";
-  const tipoAtual = paragrafos[1]?.textContent.replace("Tipo:", "").trim() || "";
-  const emailAtual = paragrafos[2]?.textContent.replace("E-mail:", "").trim() || "";
-  const telefoneAtual = paragrafos[3]?.textContent.replace("Telefone:", "").trim() || "";
-
-  const nome = window.prompt("Nome do doador:", nomeAtual);
-
-  if (nome === null) return;
-
-  if (!nome.trim()) {
-    alert("O nome do doador é obrigatório.");
-    return;
-  }
-
-  const tipoEscolhido = window.prompt(
-    "Tipo de doador:\n1 - Pessoa física\n2 - Empresa",
-    tipoAtual === "Empresa" ? "2" : "1",
-  );
-
-  if (tipoEscolhido === null) return;
-
-  let tipo_doador;
-
-  if (tipoEscolhido.trim() === "1" || tipoEscolhido.trim().toLowerCase() === "pessoa física") {
-    tipo_doador = "Pessoa física";
-  } else if (tipoEscolhido.trim() === "2" || tipoEscolhido.trim().toLowerCase() === "empresa") {
-    tipo_doador = "Empresa";
-  } else {
-    alert("Tipo inválido. Informe 1 para Pessoa física ou 2 para Empresa.");
-    return;
-  }
-
-  const email = window.prompt(
-    "E-mail do doador (deixe em branco se não tiver):",
-    emailAtual === "Não informado" ? "" : emailAtual,
-  );
-
-  if (email === null) return;
-
-  const telefone = window.prompt(
-    "Telefone do doador (deixe em branco se não tiver):",
-    telefoneAtual === "Não informado" ? "" : telefoneAtual,
-  );
-
-  if (telefone === null) return;
-
-  botao.disabled = true;
+async function carregarAnimaisAdmin() {
+  const lista = document.querySelector("#lista-animais-admin");
 
   try {
-    const resposta = await apiAdmin(`/api/doadores/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        nome: nome.trim(),
-        tipo_doador,
-        email: email.trim(),
-        telefone: telefone.trim(),
-      }),
-    });
+    const animais = await listarAnimais();
 
-    const resultado = await resposta.json();
-
-    if (!resposta.ok) {
-      throw new Error(
-        resultado.mensagem || resultado.erro || "Não foi possível atualizar o doador.",
-      );
+    if (!Array.isArray(animais) || animais.length === 0) {
+      lista.innerHTML = "<p>Nenhum animal cadastrado.</p>";
+      return;
     }
 
-    alert(resultado.mensagem || "Doador atualizado com sucesso!");
+    const situacoes = {
+      Disponível: "Disponível para adoção",
+      Reservado: "Em processo de adoção",
+      Adotado: "Adotado",
+    };
 
-    await carregarDoadores();
+    lista.innerHTML = animais
+      .map(
+        (animal) => `
+      <article class="card-animal">
+        <h3>${escaparHTML(animal.nome)}</h3>
+        <p><strong>Espécie:</strong> ${escaparHTML(animal.especie)}</p>
+        <p><strong>Raça:</strong> ${escaparHTML(animal.raca || "Não informada")}</p>
+        <p><strong>Idade:</strong> ${escaparHTML(animal.idade ?? "Não informada")}</p>
+        <p><strong>Sexo:</strong> ${escaparHTML(animal.sexo || "Não informado")}</p>
+        <p><strong>Situação:</strong>
+          ${escaparHTML(situacoes[animal.status] || animal.status || "Não informada")}
+        </p>
+        <p><strong>Descrição:</strong>
+          ${escaparHTML(animal.descricao || "Sem descrição")}
+        </p>
+      </article>
+    `,
+      )
+      .join("");
   } catch (erro) {
-    alert(erro.message);
-    console.error("Erro ao editar doador:", erro);
-    botao.disabled = false;
-  }
-}
-
-// EXCLUIR DOADOR
-
-async function excluirDoador(evento) {
-  const botao = evento.currentTarget;
-  const id = Number(botao.dataset.id);
-
-  if (!Number.isInteger(id) || id <= 0) {
-    alert("Identificação do doador inválida.");
-    return;
-  }
-
-  const confirmar = window.confirm(
-    "Tem certeza de que deseja excluir este doador?\n\nSe ele tiver doações registradas, a exclusão não será permitida para preservar o histórico.",
-  );
-
-  if (!confirmar) return;
-
-  botao.disabled = true;
-
-  try {
-    const resposta = await apiAdmin(`/api/doadores/${id}`, {
-      method: "DELETE",
-    });
-
-    const resultado = await resposta.json();
-
-    if (!resposta.ok) {
-      if (resposta.status === 409) {
-        throw new Error(
-          resultado.mensagem ||
-            "Este doador possui doações registradas e não pode ser excluído. O histórico foi preservado.",
-        );
-      }
-
-      throw new Error(resultado.mensagem || resultado.erro || "Não foi possível excluir o doador.");
-    }
-
-    alert(resultado.mensagem || "Doador excluído com sucesso!");
-
-    await carregarDoadores();
-  } catch (erro) {
-    alert(erro.message);
-    console.error("Erro ao excluir doador:", erro);
-    botao.disabled = false;
-  }
-}
-
-// CADASTRAR DOADOR
-
-document.querySelector("#form-doador").addEventListener("submit", async (evento) => {
-  evento.preventDefault();
-
-  const formulario = evento.currentTarget;
-  const mensagem = document.querySelector("#mensagem-doador");
-  const botao = formulario.querySelector("button");
-
-  const dados = Object.fromEntries(new FormData(formulario).entries());
-
-  if (!dados.email.trim()) {
-    delete dados.email;
-  }
-
-  if (!dados.telefone.trim()) {
-    delete dados.telefone;
-  }
-
-  botao.disabled = true;
-  mensagem.textContent = "Cadastrando doador...";
-
-  try {
-    const resposta = await apiAdmin("/api/doadores", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(dados),
-    });
-
-    const resultado = await resposta.json();
-
-    if (!resposta.ok) {
-      throw new Error(resultado.mensagem || "Erro ao cadastrar doador.");
-    }
-
-    mensagem.textContent = "Doador cadastrado com sucesso!";
-    formulario.reset();
-
-    await carregarDoadores();
-  } catch (erro) {
-    mensagem.textContent = erro.message;
-  } finally {
-    botao.disabled = false;
-  }
-});
-
-// ==========================================
-// VERIFICAR API
-// ==========================================
-
-async function verificarAPI() {
-  const status = document.querySelector("#api-status");
-
-  try {
-    const resposta = await fetch("/api/health");
-    const dados = await resposta.json();
-
-    if (!resposta.ok || dados.status !== "ok") {
-      throw new Error("API indisponível");
-    }
-
-    status.textContent = "Status da API: conectado";
-  } catch {
-    status.textContent = "Status da API: indisponível";
+    lista.innerHTML = "<p>Não foi possível carregar os animais cadastrados.</p>";
+    console.error(erro);
   }
 }
 
 // ==========================================
-// CARREGAR ANIMAIS
-// VITRINE PÚBLICA
+// ANIMAIS - VITRINE PÚBLICA
 // ==========================================
 
 async function carregarAnimais() {
   const lista = document.querySelector("#lista-animais");
 
   try {
-    const resposta = await fetch("/api/animais");
+    const animais = await listarAnimais();
 
-    if (!resposta.ok) {
-      throw new Error("Erro ao buscar animais");
+    if (!Array.isArray(animais)) {
+      throw new Error("A API não retornou uma lista válida de animais.");
     }
-
-    const animais = await resposta.json();
 
     const disponiveis = animais.filter((animal) => animal.status === "Disponível");
 
@@ -781,19 +466,14 @@ async function carregarAnimais() {
 
         <form class="form-adocao" data-animal-id="${Number(animal.id)}">
           <h4>Quero adotar!</h4>
-
           <label>Seu nome</label>
           <input name="nome" type="text" required />
-
           <label>Seu e-mail</label>
           <input name="email" type="email" required />
-
           <label>Seu telefone</label>
           <input name="telefone" type="tel" required />
-
           <label>Sua cidade</label>
           <input name="cidade" type="text" required />
-
           <button type="submit">Solicitar adoção</button>
           <p class="mensagem-adocao" role="status"></p>
         </form>
@@ -811,137 +491,12 @@ async function carregarAnimais() {
   }
 }
 
-// ==========================================
-// CARREGAR TODOS OS ANIMAIS
-// SOMENTE ADMINISTRADOR
-// ==========================================
-
-async function carregarAnimaisAdmin() {
-  const lista = document.querySelector("#lista-animais-admin");
-
-  try {
-    const resposta = await apiAdmin("/api/animais");
-
-    if (!resposta.ok) {
-      throw new Error("Erro ao buscar animais cadastrados.");
-    }
-
-    const animais = await resposta.json();
-
-    if (!Array.isArray(animais)) {
-      throw new Error("A resposta da API não contém uma lista válida.");
-    }
-
-    if (animais.length === 0) {
-      lista.innerHTML = "<p>Nenhum animal cadastrado.</p>";
-      return;
-    }
-
-    const situacoes = {
-      Disponível: "Disponível para adoção",
-      Reservado: "Em processo de adoção",
-      Adotado: "Adotado",
-    };
-
-    lista.innerHTML = animais
-      .map(
-        (animal) => `
-          <article class="card-animal">
-            <h3>${escaparHTML(animal.nome)}</h3>
-
-            <p><strong>Espécie:</strong>
-              ${escaparHTML(animal.especie)}
-            </p>
-
-            <p><strong>Raça:</strong>
-              ${escaparHTML(animal.raca || "Não informada")}
-            </p>
-
-            <p><strong>Idade:</strong>
-              ${escaparHTML(animal.idade ?? "Não informada")}
-            </p>
-
-            <p><strong>Sexo:</strong>
-              ${escaparHTML(animal.sexo || "Não informado")}
-            </p>
-
-            <p><strong>Situação:</strong>
-              ${escaparHTML(situacoes[animal.status] || animal.status || "Não informada")}
-            </p>
-
-            <p><strong>Descrição:</strong>
-              ${escaparHTML(animal.descricao || "Sem descrição")}
-            </p>
-          </article>
-        `,
-      )
-      .join("");
-  } catch (erro) {
-    lista.innerHTML = "<p>Não foi possível carregar os animais cadastrados.</p>";
-
-    console.error("Erro ao carregar animais administrativos:", erro);
-  }
-}
-
-// ==========================================
-// CADASTRAR ANIMAL
-// SOMENTE ADMINISTRADOR
-// ==========================================
-
-async function cadastrarAnimal(evento) {
-  evento.preventDefault();
-
-  const formulario = document.querySelector("#form-animal");
-  const mensagem = document.querySelector("#mensagem-cadastro");
-  const botao = formulario.querySelector("button");
-
-  const dados = Object.fromEntries(new FormData(formulario).entries());
-
-  dados.idade = dados.idade === "" ? null : Number(dados.idade);
-
-  botao.disabled = true;
-  mensagem.textContent = "Salvando cadastro...";
-
-  try {
-    const resposta = await apiAdmin("/api/animais", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(dados),
-    });
-
-    const resultado = await resposta.json();
-
-    if (!resposta.ok) {
-      throw new Error(resultado.mensagem || "Erro ao cadastrar animal.");
-    }
-
-    mensagem.textContent = "Animal cadastrado com sucesso!";
-
-    formulario.reset();
-
-    await carregarAnimais();
-    await carregarAnimaisAdmin();
-  } catch (erro) {
-    mensagem.textContent = erro.message;
-  } finally {
-    botao.disabled = false;
-  }
-}
-
-// ==========================================
-// SOLICITAR ADOÇÃO
-// ROTA PÚBLICA
-// ==========================================
-
 async function solicitarAdocao(evento) {
   evento.preventDefault();
 
   const formulario = evento.currentTarget;
   const mensagem = formulario.querySelector(".mensagem-adocao");
   const botao = formulario.querySelector("button");
-
   const dados = Object.fromEntries(new FormData(formulario).entries());
 
   dados.animal_id = Number(formulario.dataset.animalId);
@@ -950,21 +505,10 @@ async function solicitarAdocao(evento) {
   mensagem.textContent = "Enviando solicitação...";
 
   try {
-    const resposta = await fetch("/api/adocoes", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(dados),
-    });
+    const resultado = await enviarSolicitacaoAdocao(dados);
 
-    const resultado = await resposta.json();
-
-    if (!resposta.ok) {
-      throw new Error(resultado.mensagem || "Não foi possível enviar a solicitação.");
-    }
-
-    mensagem.textContent = "Solicitação enviada com sucesso! Aguarde nosso contato.";
+    mensagem.textContent =
+      resultado.mensagem || "Solicitação enviada com sucesso! Aguarde nosso contato.";
 
     formulario.reset();
   } catch (erro) {
@@ -975,155 +519,50 @@ async function solicitarAdocao(evento) {
 }
 
 // ==========================================
-// CARREGAR SOLICITAÇÕES
-// SOMENTE ADMINISTRADOR
+// CADASTRAR ANIMAL
 // ==========================================
 
-async function carregarAdocoes() {
-  const lista = document.querySelector("#lista-adocoes");
+document.querySelector("#form-animal").addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+
+  const formulario = evento.currentTarget;
+  const mensagem = document.querySelector("#mensagem-cadastro");
+  const botao = formulario.querySelector("button");
+  const dados = Object.fromEntries(new FormData(formulario).entries());
+
+  dados.idade = dados.idade === "" ? null : Number(dados.idade);
+
+  botao.disabled = true;
+  mensagem.textContent = "Salvando cadastro...";
 
   try {
-    const resposta = await apiAdmin("/api/adocoes");
+    const resultado = await enviarCadastroAnimal(dados);
 
-    if (!resposta.ok) {
-      throw new Error("Erro ao buscar solicitações.");
-    }
+    mensagem.textContent = resultado.mensagem || "Animal cadastrado com sucesso!";
 
-    const adocoes = await resposta.json();
+    formulario.reset();
 
-    if (adocoes.length === 0) {
-      lista.innerHTML = "<p>Nenhuma solicitação recebida.</p>";
-      return;
-    }
-
-    lista.innerHTML = adocoes
-      .map(
-        (adocao) => `
-      <article class="card-animal">
-        <h3>Solicitação nº ${Number(adocao.id)}</h3>
-
-        <p><strong>Animal:</strong> ${escaparHTML(adocao.animal)}</p>
-        <p><strong>Interessado:</strong> ${escaparHTML(adocao.interessado)}</p>
-        <p><strong>E-mail:</strong> ${escaparHTML(adocao.email)}</p>
-        <p><strong>Telefone:</strong> ${escaparHTML(adocao.telefone)}</p>
-        <p><strong>Cidade:</strong> ${escaparHTML(adocao.cidade)}</p>
-        <p><strong>Status:</strong> ${escaparHTML(adocao.status)}</p>
-
-        ${
-          adocao.status === "Pendente"
-            ? `
-          <button
-            type="button"
-            class="btn-aprovar"
-            data-id="${Number(adocao.id)}"
-            data-status="Aprovada"
-          >
-            Aprovar adoção
-          </button>
-
-          <button
-            type="button"
-            class="btn-cancelar"
-            data-id="${Number(adocao.id)}"
-            data-status="Cancelada"
-          >
-            Cancelar solicitação
-          </button>
-        `
-            : ""
-        }
-
-        <p>
-          <strong>Data:</strong>
-          ${escaparHTML(new Date(adocao.data_solicitacao).toLocaleString("pt-BR"))}
-        </p>
-      </article>
-    `,
-      )
-      .join("");
-
-    lista.querySelectorAll(".btn-aprovar, .btn-cancelar").forEach((botao) => {
-      botao.addEventListener("click", async () => {
-        const id = botao.dataset.id;
-        const status = botao.dataset.status;
-
-        const confirmar = window.confirm(
-          status === "Aprovada"
-            ? "Deseja aprovar esta adoção?"
-            : "Deseja cancelar esta solicitação?",
-        );
-
-        if (!confirmar) return;
-
-        botao.disabled = true;
-
-        try {
-          const resposta = await apiAdmin(`/api/adocoes/${id}/status`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ status }),
-          });
-
-          const resultado = await resposta.json();
-
-          if (!resposta.ok) {
-            throw new Error(resultado.mensagem || "Erro ao atualizar solicitação.");
-          }
-
-          alert(resultado.mensagem);
-
-          await carregarAdocoes();
-
-          if (status === "Aprovada") {
-            await carregarAnimais();
-            await carregarAnimaisAdmin();
-          }
-        } catch (erro) {
-          alert(erro.message);
-          botao.disabled = false;
-        }
-      });
-    });
+    await carregarAnimais();
+    await carregarAnimaisAdmin();
   } catch (erro) {
-    lista.innerHTML = "<p>Não foi possível carregar as solicitações.</p>";
-    console.error(erro);
+    mensagem.textContent = erro.message;
+    console.error("Erro ao cadastrar animal:", erro);
+  } finally {
+    botao.disabled = false;
   }
-}
+});
 
 // ==========================================
-// DATA E HORA
+// CATEGORIAS E INSUMOS
 // ==========================================
-
-function atualizarDataHora() {
-  const elemento = document.querySelector("#data-hora");
-
-  if (elemento) {
-    elemento.textContent = "Data e hora: " + new Date().toLocaleString("pt-BR");
-  }
-}
-
-// ==========================================
-// GESTÃO DE CATEGORIAS
-// ==========================================
-
-const formularioCategoria = document.querySelector("#form-categoria");
 
 async function carregarCategorias() {
   const seletor = document.querySelector("#categoria-insumo");
 
   try {
-    const resposta = await apiAdmin("/api/categorias");
+    const categorias = await listarCategorias();
 
-    if (!resposta.ok) {
-      throw new Error("Não foi possível carregar as categorias.");
-    }
-
-    const dados = await resposta.json();
-    const categorias = Array.isArray(dados) ? dados : dados.categorias || [];
-
-    seletor.innerHTML = '<option value="">Selecione uma categoria</option>';
+    seletor.innerHTML = '<option value="">Sem categoria</option>';
 
     categorias.forEach((categoria) => {
       const opcao = document.createElement("option");
@@ -1136,268 +575,207 @@ async function carregarCategorias() {
   }
 }
 
-if (formularioCategoria) {
-  formularioCategoria.addEventListener("submit", async (event) => {
-    event.preventDefault();
+document.querySelector("#form-categoria").addEventListener("submit", async (evento) => {
+  evento.preventDefault();
 
-    const mensagem = document.querySelector("#mensagem-categoria");
-    const nome = document.querySelector("#nome-categoria").value.trim();
+  const formulario = evento.currentTarget;
+  const mensagem = document.querySelector("#mensagem-categoria");
+  const botao = formulario.querySelector("button");
+  const nome = document.querySelector("#nome-categoria").value.trim();
 
-    try {
-      const resposta = await apiAdmin("/api/categorias", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ nome }),
-      });
-
-      const dados = await resposta.json();
-
-      if (!resposta.ok) {
-        throw new Error(dados.erro || dados.mensagem || "Erro ao cadastrar categoria.");
-      }
-
-      mensagem.textContent = "Categoria cadastrada com sucesso!";
-      formularioCategoria.reset();
-
-      await carregarCategorias();
-    } catch (erro) {
-      mensagem.textContent = erro.message;
-      console.error("Erro ao cadastrar categoria:", erro);
-    }
-  });
-}
-
-// ==========================================
-// GESTÃO DE INSUMOS
-// ==========================================
-
-const formularioInsumo = document.querySelector("#form-insumo");
-
-if (formularioInsumo) {
-  formularioInsumo.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const mensagem = document.querySelector("#mensagem-insumo");
-
-    const nome = document.querySelector("#nome-insumo").value.trim();
-    const unidade = document.querySelector("#unidade-insumo").value.trim();
-    const id_categoria = document.querySelector("#categoria-insumo").value;
-
-    try {
-      const resposta = await apiAdmin("/api/insumos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nome,
-          unidade,
-          id_categoria: id_categoria || null,
-        }),
-      });
-
-      const dados = await resposta.json();
-
-      if (!resposta.ok) {
-        throw new Error(dados.erro || dados.mensagem || "Erro ao cadastrar insumo.");
-      }
-
-      mensagem.textContent = "Insumo cadastrado com sucesso!";
-      formularioInsumo.reset();
-
-      await carregarCategorias();
-      await carregarInsumos();
-    } catch (erro) {
-      mensagem.textContent = erro.message;
-      console.error("Erro ao cadastrar insumo:", erro);
-    }
-  });
-}
-
-async function carregarInsumos() {
-  const seletor = document.querySelector("#insumo-doacao");
+  botao.disabled = true;
+  mensagem.textContent = "Cadastrando categoria...";
 
   try {
-    const resposta = await apiAdmin("/api/insumos");
-
-    if (!resposta.ok) {
-      throw new Error("Não foi possível carregar os insumos.");
-    }
+    const resposta = await apiAdmin("/api/categorias", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome }),
+    });
 
     const dados = await resposta.json();
-    const insumos = Array.isArray(dados) ? dados : dados.insumos || [];
 
-    seletor.innerHTML = '<option value="">Selecione um insumo</option>';
+    if (!resposta.ok) {
+      throw new Error(dados.erro || dados.mensagem || "Erro ao cadastrar categoria.");
+    }
 
-    insumos.forEach((insumo) => {
-      const opcao = document.createElement("option");
-      opcao.value = insumo.id_insumo;
-      opcao.textContent = `${insumo.nome} (${insumo.unidade})`;
-      seletor.appendChild(opcao);
-    });
+    mensagem.textContent = "Categoria cadastrada com sucesso!";
+    formulario.reset();
+    await carregarCategorias();
   } catch (erro) {
-    console.error("Erro ao carregar insumos:", erro);
+    mensagem.textContent = erro.message;
+  } finally {
+    botao.disabled = false;
+  }
+});
+
+async function carregarInsumos() {
+  try {
+    await listarInsumos();
+  } catch (erro) {
+    console.error("Erro ao verificar insumos:", erro);
   }
 }
 
-// ==========================================
-// ADICIONAR INSUMOS À DOAÇÃO
-// ==========================================
+document.querySelector("#form-insumo").addEventListener("submit", async (evento) => {
+  evento.preventDefault();
 
-const itensDoacao = [];
+  const formulario = evento.currentTarget;
+  const mensagem = document.querySelector("#mensagem-insumo");
+  const botao = formulario.querySelector("button");
 
-document.querySelector("#btn-adicionar-insumo").addEventListener("click", () => {
-  const seletorInsumo = document.querySelector("#insumo-doacao");
-  const campoQuantidade = document.querySelector("#quantidade-doacao");
-  const lista = document.querySelector("#itens-doacao");
+  const nome = document.querySelector("#nome-insumo").value.trim();
+  const unidade = document.querySelector("#unidade-insumo").value.trim();
+  const id_categoria = document.querySelector("#categoria-insumo").value;
 
-  const id_insumo = Number(seletorInsumo.value);
-  const quantidade = Number(campoQuantidade.value);
+  botao.disabled = true;
+  mensagem.textContent = "Cadastrando insumo...";
 
-  if (!id_insumo || !quantidade || quantidade <= 0) {
-    alert("Selecione um insumo e informe uma quantidade válida.");
-    return;
+  try {
+    const resposta = await apiAdmin("/api/insumos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome,
+        unidade,
+        id_categoria: id_categoria || null,
+      }),
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(dados.erro || dados.mensagem || "Erro ao cadastrar insumo.");
+    }
+
+    mensagem.textContent = "Insumo cadastrado com sucesso!";
+    formulario.reset();
+    await carregarCategorias();
+    await carregarInsumos();
+  } catch (erro) {
+    mensagem.textContent = erro.message;
+  } finally {
+    botao.disabled = false;
   }
-
-  const insumo = seletorInsumo.selectedOptions[0];
-
-  itensDoacao.push({
-    id_insumo,
-    nome: insumo.textContent,
-    quantidade,
-  });
-
-  lista.innerHTML = itensDoacao
-    .map(
-      (item) => `
-      <p>
-        ${escaparHTML(item.nome)} - Quantidade: ${item.quantidade}
-      </p>
-    `,
-    )
-    .join("");
-
-  seletorInsumo.value = "";
-  campoQuantidade.value = "";
 });
 
 // ==========================================
-// REGISTRAR DOAÇÃO
+// LOGIN E LOGOUT
 // ==========================================
 
-document.querySelector("#form-doacao").addEventListener("submit", async (event) => {
-  event.preventDefault();
+async function carregarDadosAdmin() {
+  await carregarAdocoes();
+  await carregarAnimaisAdmin();
+  await carregarCategorias();
+  await carregarInsumos();
 
-  const id_doador = Number(document.querySelector("#doador-doacao").value);
-  const data_doacao = document.querySelector("#data-doacao").value;
-  const observacao = document.querySelector("#observacao-doacao").value;
-  const mensagem = document.querySelector("#mensagem-doacao");
+  if (!window.location.hash) {
+    window.location.hash = "#/doadores";
+  } else {
+    await navegar();
+  }
+}
 
-  if (!id_doador || !data_doacao || itensDoacao.length === 0) {
-    mensagem.textContent = "Selecione um doador, informe a data e adicione pelo menos um insumo.";
+async function verificarLogin() {
+  if (!obterToken()) {
+    mostrarLogin();
     return;
   }
 
-  const dadosDoacao = {
-    id_doador,
-    data_doacao,
-    observacao,
-    insumos: itensDoacao.map((item) => ({
-      id_insumo: item.id_insumo,
-      quantidade: item.quantidade,
-    })),
-  };
+  try {
+    const resposta = await apiAdmin("/api/admin/me");
+
+    if (!resposta.ok) {
+      localStorage.removeItem(CHAVE_TOKEN);
+      mostrarLogin();
+      return;
+    }
+
+    mostrarPainelAdmin();
+    await carregarDadosAdmin();
+  } catch (erro) {
+    console.error("Erro ao verificar login:", erro);
+    mostrarLogin();
+  }
+}
+
+formularioLogin.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+
+  const botao = document.querySelector("#btn-login");
+  const dados = Object.fromEntries(new FormData(formularioLogin).entries());
+
+  botao.disabled = true;
+  mensagemLogin.textContent = "Verificando acesso...";
 
   try {
-    const resposta = await apiAdmin("/api/doacoes", {
+    const resposta = await fetch("/api/admin/login", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(dadosDoacao),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dados),
     });
 
     const resultado = await resposta.json();
 
     if (!resposta.ok) {
-      throw new Error(
-        resultado.erro || resultado.mensagem || "Não foi possível registrar a doação.",
-      );
+      throw new Error(resultado.mensagem || "Não foi possível entrar.");
     }
 
-    mensagem.textContent = "Doação registrada com sucesso!";
+    if (!resultado.token) {
+      throw new Error("O servidor não retornou o token de acesso.");
+    }
 
-    document.querySelector("#form-doacao").reset();
+    localStorage.setItem(CHAVE_TOKEN, resultado.token);
+    mensagemLogin.textContent = "Login realizado com sucesso!";
+    mostrarPainelAdmin();
 
-    itensDoacao.length = 0;
-
-    document.querySelector("#itens-doacao").innerHTML = "<p>Nenhum insumo adicionado.</p>";
-
-    await carregarDoacoes();
+    await carregarDadosAdmin();
   } catch (erro) {
-    console.error("Erro ao registrar doação:", erro);
-    mensagem.textContent = erro.message;
+    mensagemLogin.textContent = erro.message;
+  } finally {
+    botao.disabled = false;
   }
 });
 
+document.querySelector("#btn-sair").addEventListener("click", async () => {
+  try {
+    if (obterToken()) {
+      await apiAdmin("/api/admin/logout", { method: "POST" });
+    }
+  } catch (erro) {
+    console.error("Erro ao encerrar sessão:", erro);
+  }
+
+  localStorage.removeItem(CHAVE_TOKEN);
+  mostrarLogin();
+  mensagemLogin.textContent = "Você saiu da área administrativa.";
+});
+
 // ==========================================
-// CARREGAR HISTÓRICO DE DOAÇÕES
+// STATUS DA API E DATA/HORA
 // ==========================================
 
-async function carregarDoacoes() {
-  const lista = document.querySelector("#lista-doacoes");
+async function verificarAPI() {
+  const status = document.querySelector("#api-status");
 
   try {
-    const resposta = await apiAdmin("/api/doacoes");
+    const dados = await verificarSaudeAPI();
 
-    if (!resposta.ok) {
-      throw new Error("Erro ao carregar histórico de doações.");
+    if (dados.status !== "ok") {
+      throw new Error("API indisponível");
     }
 
-    const doacoes = await resposta.json();
+    status.textContent = "Status da API: conectado";
+  } catch {
+    status.textContent = "Status da API: indisponível";
+  }
+}
 
-    if (doacoes.length === 0) {
-      lista.innerHTML = "<p>Nenhuma doação registrada.</p>";
-      return;
-    }
+function atualizarDataHora() {
+  const elemento = document.querySelector("#data-hora");
 
-    lista.innerHTML = doacoes
-      .map(
-        (doacao) => `
-      <article class="card-animal">
-        <h3>Doação nº ${Number(doacao.id_doacao)}</h3>
-        <p><strong>Doador:</strong> ${escaparHTML(doacao.nome_doador)}</p>
-        <p><strong>Data:</strong> ${escaparHTML(
-          new Date(doacao.data_doacao).toLocaleDateString("pt-BR", {
-            timeZone: "UTC",
-          }),
-        )}</p>
-
-        <p><strong>Insumos recebidos:</strong></p>
-        ${doacao.insumos
-          .map(
-            (item) => `
-          <p>
-            ${escaparHTML(item.nome_insumo)} -
-            Quantidade: ${escaparHTML(item.quantidade)}
-            ${escaparHTML(item.unidade)}
-          </p>
-        `,
-          )
-          .join("")}
-
-        <p><strong>Observação:</strong>
-          ${escaparHTML(doacao.observacao || "Nenhuma")}
-        </p>
-      </article>
-    `,
-      )
-      .join("");
-  } catch (erro) {
-    lista.innerHTML = "<p>Não foi possível carregar o histórico de doações.</p>";
-    console.error("Erro ao carregar doações:", erro);
+  if (elemento) {
+    elemento.textContent = "Data e hora: " + new Date().toLocaleString("pt-BR");
   }
 }
 
@@ -1405,13 +783,9 @@ async function carregarDoacoes() {
 // INICIAR APLICAÇÃO
 // ==========================================
 
-document.querySelector("#form-animal").addEventListener("submit", cadastrarAnimal);
-
-verificarAPI().catch(console.error);
-
+void verificarAPI();
 void carregarAnimais();
 void verificarLogin();
 
 atualizarDataHora();
-
 setInterval(atualizarDataHora, 1000);
