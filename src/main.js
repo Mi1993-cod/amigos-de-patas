@@ -542,7 +542,6 @@ async function editarDoador(evento) {
     return;
   }
 
-  const lista = document.querySelector("#lista-doadores");
   const card = botao.closest(".card-animal");
 
   if (!card) return;
