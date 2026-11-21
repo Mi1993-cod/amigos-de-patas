@@ -167,7 +167,7 @@ Substitua os valores de exemplo pelos dados da sua instalação.
 
 O arquivo `.gitignore` está configurado para ignorar os arquivos de ambiente, mantendo o `.env.example` disponível como modelo.
 
-## 8. Criação do administrador
+## 8. Criação do administrador e acesso de demonstração
 
 Após configurar o banco de dados e as variáveis de ambiente, utilize o script:
 
@@ -177,9 +177,16 @@ node server/criar-admin.js
 
 O script solicita os dados do administrador e armazena a senha em formato de hash utilizando bcryptjs.
 
-Execute-o somente quando necessário. O e-mail do administrador deve ser único.
+Execute-o para cadastrar o administrador no banco de dados utilizado na instalação.
 
-Não compartilhe as credenciais administrativas.
+**Dados de acesso de demonstração:**
+
+- E-mail: `admin@amigosdepatas.com`
+- Senha: fornecida separadamente para fins de avaliação.
+
+A senha não deve ser publicada no repositório GitHub.
+
+**Importante:** cada instalação do projeto possui seu próprio banco de dados. Portanto, o administrador deve ser cadastrado no banco local utilizando o script acima.
 
 ## 9. Como executar o projeto
 
@@ -188,7 +195,7 @@ Não compartilhe as credenciais administrativas.
 **Terminal 1 — Iniciar a API:**
 
 ```bash
-pnpm api
+node server/index.js
 ```
 
 A API será iniciada na porta 3000.
